@@ -14,7 +14,7 @@ export const getBotIntro = (): string =>
 
 export const getBotPromptForStep = (step: StepState): string => {
   return [
-    `Ahora necesito revisar "${step.title}".`,
+    `Ahora necesito revisar **"${step.title}"**.`,
     `- ${step.validationHint}`,
     '- Cuando tengas el archivo listo, súbelo con el botón "Adjuntar" y yo reviso que todo esté bien.'
   ].join("\n");

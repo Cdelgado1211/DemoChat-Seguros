@@ -4,6 +4,29 @@ interface Props {
   message: ChatMessage;
 }
 
+const renderTextWithBold = (text: string) => {
+  const lines = text.split("\n");
+  return (
+    <>
+      {lines.map((line, lineIndex) => {
+        const parts = line.split("**");
+        return (
+          <span key={`line-${lineIndex}`}>
+            {parts.map((part, idx) =>
+              idx % 2 === 1 ? (
+                <strong key={`bold-${lineIndex}-${idx}`}>{part}</strong>
+              ) : (
+                <span key={`text-${lineIndex}-${idx}`}>{part}</span>
+              )
+            )}
+            {lineIndex < lines.length - 1 && <br />}
+          </span>
+        );
+      })}
+    </>
+  );
+};
+
 export const MessageBubble: React.FC<Props> = ({ message }) => {
   const isBot = message.sender === "bot";
 
@@ -28,7 +51,7 @@ export const MessageBubble: React.FC<Props> = ({ message }) => {
           isBot ? "bg-white text-slate-900" : "bg-primary text-white"
         ].join(" ")}
       >
-        <p className="whitespace-pre-line">{message.text}</p>
+        <p>{renderTextWithBold(message.text)}</p>
         <span className="mt-1 block text-[10px] text-slate-400">
           {new Date(message.createdAt).toLocaleTimeString("es-MX", {
             hour: "2-digit",
