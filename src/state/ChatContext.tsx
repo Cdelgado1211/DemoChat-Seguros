@@ -2,7 +2,14 @@ import React, { createContext, useContext, useEffect, useMemo, useReducer } from
 import type { ChatContextValue, ChatMessage } from "../types/chat";
 import { chatReducer, initialChatState } from "./chatReducer";
 import { buildInitialStepsState } from "../lib/stepsConfig";
-import { getBotIntro, getBotMessageOnValidationFail, getBotMessageOnValidationOk, getBotPromptForStep } from "../lib/bot";
+import {
+  getBotIntro,
+  getBotMessageOnValidationFail,
+  getBotMessageOnValidationOk,
+  getBotPromptForStep,
+  getBotReplyToUserMessage,
+  splitBotTextIntoBubbles
+} from "../lib/bot";
 import { getOrCreateConversationId, clearConversationId } from "../lib/storage";
 import { validateDocument } from "../services/validationApi";
 
@@ -19,16 +26,37 @@ const createMessage = (sender: "bot" | "user", text: string, stepId?: string): C
 export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(chatReducer, initialChatState);
 
+  const setBotTyping = (typing: boolean) => {
+    dispatch({ type: "SET_BOT_TYPING", payload: { typing } });
+  };
+
+  const pushMessage = (message: ChatMessage) => {
+    dispatch({ type: "SEND_MESSAGE", payload: { message } });
+  };
+
+  const sendBotChunksSequentially = async (text: string, stepId?: string) => {
+    const chunks = splitBotTextIntoBubbles(text);
+    if (!chunks.length) return;
+
+    setBotTyping(true);
+    for (const chunk of chunks) {
+      // pequeña pausa para simular que el bot está escribiendo
+      // y no saturar al usuario con muchos mensajes a la vez
+      await new Promise((resolve) => setTimeout(resolve, 600));
+      pushMessage(createMessage("bot", chunk, stepId));
+    }
+    setBotTyping(false);
+  };
+
   useEffect(() => {
     const steps = buildInitialStepsState();
     const conversationId = getOrCreateConversationId();
-    const firstStep = steps[0];
 
     const introMessages: ChatMessage[] = [];
-    introMessages.push(createMessage("bot", getBotIntro()));
-    if (firstStep) {
-      introMessages.push(createMessage("bot", getBotPromptForStep(firstStep), firstStep.id));
-    }
+    // mensaje de intro inicial se envía completo sin delay
+    splitBotTextIntoBubbles(getBotIntro()).forEach((chunk) => {
+      introMessages.push(createMessage("bot", chunk));
+    });
 
     dispatch({
       type: "INIT",
@@ -41,25 +69,71 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     [state.steps, state.activeStepId]
   );
 
+  const startReembolsoFlow = () => {
+    if (state.flowStarted) return;
+    const firstStep = state.steps[0];
+
+    // Registrar elección del usuario como mensaje
+    const userChoice = createMessage("user", "Reembolsos", firstStep?.id);
+    pushMessage(userChoice);
+
+    dispatch({ type: "START_FLOW", payload: { topic: "reembolso" } });
+
+    if (firstStep) {
+      void sendBotChunksSequentially(getBotPromptForStep(firstStep), firstStep.id);
+    }
+  };
+
+  const chooseOtherTopic = () => {
+    if (state.flowStarted) return;
+    const firstStep = state.steps[0];
+    const userChoice = createMessage("user", "Otro", firstStep?.id);
+    pushMessage(userChoice);
+
+    const reply =
+      'Todavía no se han configurado más intenciones en este asistente, pero estamos trabajando en ello. Por ahora solo puedo ayudarte con el prerregistro de reembolsos médicos.';
+
+    void sendBotChunksSequentially(reply);
+  };
+
   const sendUserMessage = (text: string) => {
+    if (!state.flowStarted) return;
     if (!text.trim()) return;
+
+    // Evitar que se envíen mensajes mientras un documento está en validación
+    const isValidating = Object.values(state.uploads).some(
+      (u) => u && (u.status === "uploading" || u.status === "validating")
+    );
+    if (isValidating) return;
+
     const msg = createMessage("user", text, state.activeStepId ?? undefined);
-    dispatch({ type: "SEND_MESSAGE", payload: { message: msg } });
+    pushMessage(msg);
+
+    if (activeStep) {
+      void sendBotChunksSequentially(getBotReplyToUserMessage(activeStep), activeStep.id);
+    }
   };
 
   const sendUserMessageWithFile = async (text: string | null, file: File) => {
+    // Evitar que se carguen nuevos documentos mientras uno está en validación
+    const isValidating = Object.values(state.uploads).some(
+      (u) => u && (u.status === "uploading" || u.status === "validating")
+    );
+    if (isValidating) return;
+
     if (!activeStep || activeStep.id !== state.activeStepId) {
       const warning = createMessage(
         "bot",
         "Solo puedes adjuntar documentos para el paso actual. Revisa el panel de progreso.",
         state.activeStepId ?? undefined
       );
-      dispatch({ type: "SEND_MESSAGE", payload: { message: warning } });
+      pushMessage(warning);
       return;
     }
 
     if (text && text.trim()) {
-      sendUserMessage(text);
+      const msg = createMessage("user", text, state.activeStepId ?? undefined);
+      pushMessage(msg);
     }
 
     const upload = {
@@ -67,19 +141,17 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       fileName: file.name,
       sizeBytes: file.size,
       mimeType: file.type,
-      status: "idle" as const
+      status: "idle" as const,
+      createdAt: new Date().toISOString()
     };
 
     dispatch({ type: "ATTACH_FILE", payload: { upload } });
     dispatch({ type: "UPLOAD_STARTED", payload: { stepId: activeStep.id } });
     dispatch({ type: "VALIDATION_STARTED", payload: { stepId: activeStep.id } });
 
-    const validatingMsg = createMessage(
-      "bot",
-      "Estoy validando tu documento. Esto puede tardar unos segundos…",
-      activeStep.id
-    );
-    dispatch({ type: "SEND_MESSAGE", payload: { message: validatingMsg } });
+    const validatingMsg =
+      "Estoy validando tu documento. Esto puede tardar unos segundos…";
+    void sendBotChunksSequentially(validatingMsg, activeStep.id);
 
     try {
       const response = await validateDocument(
@@ -92,7 +164,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (response.ok) {
         dispatch({ type: "VALIDATION_OK", payload: { stepId: activeStep.id, response } });
         const okText = getBotMessageOnValidationOk(activeStep);
-        dispatch({ type: "SEND_MESSAGE", payload: { message: createMessage("bot", okText, activeStep.id) } });
+        await sendBotChunksSequentially(okText, activeStep.id);
 
         const currentIndex = state.steps.findIndex((s) => s.id === activeStep.id);
         const nextStep = state.steps.find((_, idx) => idx > currentIndex);
@@ -100,10 +172,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (nextStep) {
           dispatch({ type: "NEXT_STEP" });
           const nextPrompt = getBotPromptForStep(nextStep);
-          dispatch({
-            type: "SEND_MESSAGE",
-            payload: { message: createMessage("bot", nextPrompt, nextStep.id) }
-          });
+          await sendBotChunksSequentially(nextPrompt, nextStep.id);
         }
       } else {
         dispatch({
@@ -114,10 +183,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         });
         const failText = getBotMessageOnValidationFail(activeStep, response.issues);
-        dispatch({
-          type: "SEND_MESSAGE",
-          payload: { message: createMessage("bot", failText, activeStep.id) }
-        });
+        await sendBotChunksSequentially(failText, activeStep.id);
       }
     } catch (error) {
       dispatch({
@@ -136,7 +202,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         "Tuvimos un problema al validar tu documento (posible error de red o tiempo de espera). Por favor inténtalo nuevamente.",
         activeStep.id
       );
-      dispatch({ type: "SEND_MESSAGE", payload: { message: friendly } });
+      pushMessage(friendly);
     }
   };
 
@@ -150,7 +216,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     sendUserMessage,
     sendUserMessageWithFile,
     resetFlow,
-    activeStep
+    activeStep,
+    startReembolsoFlow,
+    chooseOtherTopic
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
@@ -163,4 +231,3 @@ export const useChat = (): ChatContextValue => {
   }
   return ctx;
 };
-

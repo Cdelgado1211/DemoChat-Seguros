@@ -1,11 +1,28 @@
-import type { ChatAction, ChatState } from "../types/chat";
+import type { ChatAction, ChatState, UploadInfo } from "../types/chat";
+
+const updateLastUploadForStep = (
+  history: UploadInfo[],
+  stepId: string,
+  patch: Partial<UploadInfo>
+): UploadInfo[] => {
+  const idx = [...history].reverse().findIndex((u) => u.stepId === stepId);
+  if (idx === -1) return history;
+  const realIndex = history.length - 1 - idx;
+  const updated = [...history];
+  updated[realIndex] = { ...updated[realIndex], ...patch };
+  return updated;
+};
 
 export const initialChatState: ChatState = {
   steps: [],
   activeStepId: null,
   messages: [],
   uploads: {},
-  conversationId: ""
+  conversationId: "",
+  flowStarted: false,
+  topic: null,
+  isBotTyping: false,
+  uploadsHistory: []
 };
 
 export const chatReducer = (state: ChatState, action: ChatAction): ChatState => {
@@ -17,6 +34,7 @@ export const chatReducer = (state: ChatState, action: ChatAction): ChatState => 
         activeStepId: action.payload.steps[0]?.id ?? null,
         messages: action.payload.introMessages,
         uploads: {},
+        uploadsHistory: [],
         conversationId: action.payload.conversationId
       };
     }
@@ -33,7 +51,8 @@ export const chatReducer = (state: ChatState, action: ChatAction): ChatState => 
         uploads: {
           ...state.uploads,
           [upload.stepId]: upload
-        }
+        },
+        uploadsHistory: [...state.uploadsHistory, upload]
       };
     }
     case "UPLOAD_STARTED": {
@@ -48,7 +67,11 @@ export const chatReducer = (state: ChatState, action: ChatAction): ChatState => 
             status: "uploading",
             errorMessage: undefined
           }
-        }
+        },
+        uploadsHistory: updateLastUploadForStep(state.uploadsHistory, action.payload.stepId, {
+          status: "uploading",
+          errorMessage: undefined
+        })
       };
     }
     case "UPLOAD_DONE": {
@@ -62,7 +85,10 @@ export const chatReducer = (state: ChatState, action: ChatAction): ChatState => 
             ...current,
             status: "idle"
           }
-        }
+        },
+        uploadsHistory: updateLastUploadForStep(state.uploadsHistory, action.payload.stepId, {
+          status: "idle"
+        })
       };
     }
     case "VALIDATION_STARTED": {
@@ -77,7 +103,11 @@ export const chatReducer = (state: ChatState, action: ChatAction): ChatState => 
             status: "validating",
             errorMessage: undefined
           }
-        }
+        },
+        uploadsHistory: updateLastUploadForStep(state.uploadsHistory, action.payload.stepId, {
+          status: "validating",
+          errorMessage: undefined
+        })
       };
     }
     case "VALIDATION_OK": {
@@ -99,7 +129,13 @@ export const chatReducer = (state: ChatState, action: ChatAction): ChatState => 
                 extracted: action.payload.response.extracted
               }
             : current
-        }
+        },
+        uploadsHistory: updateLastUploadForStep(state.uploadsHistory, action.payload.stepId, {
+          status: "ok",
+          confidence: action.payload.response.confidence,
+          issues: action.payload.response.issues,
+          extracted: action.payload.response.extracted
+        })
       };
     }
     case "VALIDATION_FAIL": {
@@ -120,7 +156,12 @@ export const chatReducer = (state: ChatState, action: ChatAction): ChatState => 
                 issues: action.payload.issues
               }
             : current
-        }
+        },
+        uploadsHistory: updateLastUploadForStep(state.uploadsHistory, action.payload.stepId, {
+          status: "error",
+          errorMessage: action.payload.errorMessage,
+          issues: action.payload.issues
+        })
       };
     }
     case "NEXT_STEP": {
@@ -153,8 +194,20 @@ export const chatReducer = (state: ChatState, action: ChatAction): ChatState => 
         uploads
       };
     }
+    case "START_FLOW": {
+      return {
+        ...state,
+        flowStarted: true,
+        topic: action.payload.topic
+      };
+    }
+    case "SET_BOT_TYPING": {
+      return {
+        ...state,
+        isBotTyping: action.payload.typing
+      };
+    }
     default:
       return state;
   }
 };
-

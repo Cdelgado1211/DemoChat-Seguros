@@ -19,6 +19,7 @@ export interface UploadInfo {
   sizeBytes: number;
   mimeType: string;
   status: UploadStatus;
+  createdAt: string;
   errorMessage?: string;
   issues?: ValidationIssue[];
   confidence?: number;
@@ -30,7 +31,11 @@ export interface ChatState {
   activeStepId: string | null;
   messages: ChatMessage[];
   uploads: Record<string, UploadInfo | undefined>;
+  uploadsHistory: UploadInfo[];
   conversationId: string;
+  flowStarted: boolean;
+  topic: "reembolso" | "otro" | null;
+  isBotTyping: boolean;
 }
 
 export type ChatAction =
@@ -43,12 +48,15 @@ export type ChatAction =
   | { type: "VALIDATION_OK"; payload: { stepId: string; response: ValidationResponse } }
   | { type: "VALIDATION_FAIL"; payload: { stepId: string; issues: ValidationIssue[]; errorMessage?: string } }
   | { type: "NEXT_STEP" }
-  | { type: "RESET_STEP_FILE"; payload: { stepId: string } };
+  | { type: "RESET_STEP_FILE"; payload: { stepId: string } }
+  | { type: "START_FLOW"; payload: { topic: "reembolso" | "otro" } }
+  | { type: "SET_BOT_TYPING"; payload: { typing: boolean } };
 
 export interface ChatContextValue extends ChatState {
   sendUserMessage: (text: string) => void;
   sendUserMessageWithFile: (text: string | null, file: File) => void;
   resetFlow: () => void;
   activeStep: StepState | undefined;
+  startReembolsoFlow: () => void;
+  chooseOtherTopic: () => void;
 }
-

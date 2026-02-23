@@ -11,23 +11,28 @@ export const ProgressMobile: React.FC<Props> = ({ steps, activeStepId }) => {
   const completed = steps.filter((s) => s.status === "done").length;
 
   return (
-    <section className="border-b border-border bg-surface px-4 py-2 lg:hidden">
+    <section className="border-b border-border bg-surface/95 px-4 py-2">
       <button
         type="button"
-        className="flex w-full items-center justify-between rounded-md border border-border bg-white px-3 py-2 text-left text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        className="mx-auto flex max-w-2xl items-center justify-between rounded-full border border-border bg-white/95 px-4 py-1.5 text-left text-xs shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-controls="mobile-progress-panel"
       >
-        <span>
-          Progreso: {completed}/{steps.length} pasos
+        <span className="flex items-center gap-2">
+          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-[11px] font-semibold text-primary">
+            💬
+          </span>
+          <span className="font-medium text-slate-700">
+            Reembolso · {completed}/{steps.length} pasos
+          </span>
         </span>
-        <span className="text-xs text-slate-500">{open ? "Contraer" : "Ver pasos"}</span>
+        <span className="text-[11px] text-slate-500">{open ? "Ocultar" : "Progreso"}</span>
       </button>
       {open && (
         <div
           id="mobile-progress-panel"
-          className="mt-2 rounded-md border border-border bg-white p-3 text-xs"
+          className="mx-auto mt-2 w-full max-w-2xl rounded-lg border border-border bg-white p-3 text-xs shadow-sm"
         >
           <ol className="space-y-1">
             {steps.map((step) => (
@@ -48,4 +53,3 @@ export const ProgressMobile: React.FC<Props> = ({ steps, activeStepId }) => {
     </section>
   );
 };
-

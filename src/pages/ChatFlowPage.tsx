@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "../components/Header";
-import { StepSidebar } from "../components/StepSidebar";
 import { ProgressMobile } from "../components/ProgressMobile";
 import { ChatWindow } from "../components/ChatWindow";
 import { useChat } from "../state/ChatContext";
@@ -18,14 +17,12 @@ export const ChatFlowPage = () => {
   }, [steps, navigate]);
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex h-screen flex-col">
       <Header />
       <ProgressMobile steps={steps} activeStepId={activeStepId} />
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col lg:flex-row">
-        <StepSidebar steps={steps} activeStepId={activeStepId} />
+      <main className="flex flex-1 min-h-0 flex-col">
         <ChatWindow />
       </main>
     </div>
   );
 };
-

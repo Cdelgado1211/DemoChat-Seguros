@@ -24,7 +24,7 @@ export const MessageBubble: React.FC<Props> = ({ message }) => {
       )}
       <div
         className={[
-          "max-w-[80%] rounded-2xl px-3 py-2 text-sm shadow-sm transition-colors",
+          "max-w-[72%] rounded-2xl px-3 py-2 text-sm shadow-sm transition-colors",
           isBot ? "bg-white text-slate-900" : "bg-primary text-white"
         ].join(" ")}
       >
@@ -39,4 +39,3 @@ export const MessageBubble: React.FC<Props> = ({ message }) => {
     </div>
   );
 };
-
