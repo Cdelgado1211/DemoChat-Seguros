@@ -23,7 +23,8 @@ export const initialChatState: ChatState = {
   topic: null,
   isBotTyping: false,
   uploadsHistory: [],
-  completedDocuments: {}
+  completedDocuments: {},
+  autoRedirectToSuccess: true
 };
 
 export const chatReducer = (state: ChatState, action: ChatAction): ChatState => {
@@ -36,7 +37,8 @@ export const chatReducer = (state: ChatState, action: ChatAction): ChatState => 
         messages: action.payload.introMessages,
         uploads: {},
         uploadsHistory: [],
-        conversationId: action.payload.conversationId
+        conversationId: action.payload.conversationId,
+        autoRedirectToSuccess: true
       };
     }
     case "SEND_MESSAGE": {
@@ -226,6 +228,12 @@ export const chatReducer = (state: ChatState, action: ChatAction): ChatState => 
           ...state.completedDocuments,
           [stepId]: doc
         }
+      };
+    }
+    case "SET_AUTO_REDIRECT_TO_SUCCESS": {
+      return {
+        ...state,
+        autoRedirectToSuccess: action.payload.value
       };
     }
     default:

@@ -34,6 +34,10 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     dispatch({ type: "SEND_MESSAGE", payload: { message } });
   };
 
+  const setAutoRedirectToSuccess = (value: boolean) => {
+    dispatch({ type: "SET_AUTO_REDIRECT_TO_SUCCESS", payload: { value } });
+  };
+
   const sendBotChunksSequentially = async (text: string, stepId?: string) => {
     const chunks = splitBotTextIntoBubbles(text);
     if (!chunks.length) return;
@@ -250,8 +254,21 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const resetFlow = () => {
+    // Limpiar el conversationId almacenado y volver a dejar el estado
+    // exactamente como al inicio de la app (intro del bot + primer paso).
     clearConversationId();
-    window.location.reload();
+    const steps = buildInitialStepsState();
+    const conversationId = getOrCreateConversationId();
+
+    const introMessages: ChatMessage[] = [];
+    splitBotTextIntoBubbles(getBotIntro()).forEach((chunk) => {
+      introMessages.push(createMessage("bot", chunk));
+    });
+
+    dispatch({
+      type: "INIT",
+      payload: { steps, conversationId, introMessages }
+    });
   };
 
   const value: ChatContextValue = {
@@ -262,7 +279,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     activeStep,
     startReembolsoFlow,
     chooseOtherTopic,
-    skipOptionalStep
+    skipOptionalStep,
+    setAutoRedirectToSuccess
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

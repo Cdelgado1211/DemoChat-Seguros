@@ -42,6 +42,7 @@ export interface ChatState {
   flowStarted: boolean;
   topic: "reembolso" | "otro" | null;
   isBotTyping: boolean;
+   autoRedirectToSuccess: boolean;
 }
 
 export type ChatAction =
@@ -58,7 +59,8 @@ export type ChatAction =
   | { type: "START_FLOW"; payload: { topic: "reembolso" | "otro" } }
   | { type: "SET_BOT_TYPING"; payload: { typing: boolean } }
   | { type: "SKIP_OPTIONAL_STEP"; payload: { stepId: string } }
-  | { type: "STORE_COMPLETED_DOC"; payload: { stepId: string; doc: CompletedDocument } };
+  | { type: "STORE_COMPLETED_DOC"; payload: { stepId: string; doc: CompletedDocument } }
+  | { type: "SET_AUTO_REDIRECT_TO_SUCCESS"; payload: { value: boolean } };
 
 export interface ChatContextValue extends ChatState {
   sendUserMessage: (text: string) => void;
@@ -67,4 +69,5 @@ export interface ChatContextValue extends ChatState {
   activeStep: StepState | undefined;
   startReembolsoFlow: () => void;
   chooseOtherTopic: () => void;
+  setAutoRedirectToSuccess: (value: boolean) => void;
 }

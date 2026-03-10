@@ -14,6 +14,7 @@ export const SuccessPage = () => {
 
   const handleRestart = () => {
     resetFlow();
+    navigate("/");
   };
 
   const handleSubmitClaim = async () => {

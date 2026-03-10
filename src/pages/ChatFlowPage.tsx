@@ -6,7 +6,7 @@ import { ChatWindow } from "../components/ChatWindow";
 import { useChat } from "../state/ChatContext";
 
 export const ChatFlowPage = () => {
-  const { steps, activeStepId } = useChat();
+  const { steps, activeStepId, autoRedirectToSuccess, setAutoRedirectToSuccess } = useChat();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -15,10 +15,11 @@ export const ChatFlowPage = () => {
     // Los opcionales pueden marcarse como "done" ya sea subiendo archivo
     // o usando el botón "Omitir este documento".
     const allDone = steps.length > 0 && steps.every((s) => s.status === "done");
-    if (allDone) {
+    if (allDone && autoRedirectToSuccess) {
+      setAutoRedirectToSuccess(false);
       navigate("/success");
     }
-  }, [steps, navigate]);
+  }, [steps, autoRedirectToSuccess, navigate, setAutoRedirectToSuccess]);
 
   return (
     <div className="flex h-screen flex-col">

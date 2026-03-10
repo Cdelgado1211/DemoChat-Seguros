@@ -18,6 +18,7 @@ export const ClaimConfirmationPage = () => {
 
   const handleNewClaim = () => {
     resetFlow();
+    navigate("/");
   };
 
   return (
@@ -62,4 +63,3 @@ export const ClaimConfirmationPage = () => {
     </div>
   );
 };
-
