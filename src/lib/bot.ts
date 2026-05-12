@@ -10,7 +10,7 @@ export const splitBotTextIntoBubbles = (text: string): string[] =>
     .filter(Boolean);
 
 export const getBotIntro = (): string =>
-  "Hola, soy el asistente virtual de Allianz 👋 ¿En qué te puedo ayudar hoy? Puedes elegir una opción abajo para empezar.";
+  "Hola, soy el asistente virtual de Example 👋 ¿En qué te puedo ayudar hoy? Puedes elegir una opción abajo para empezar.";
 
 export const getBotPromptForStep = (step: StepState): string => {
   return [

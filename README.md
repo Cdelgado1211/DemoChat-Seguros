@@ -1,4 +1,4 @@
-# Allianz Chat Web · Prerregistro de Reembolso
+# Example Chat Web · Prerregistro de Reembolso
 
 Aplicación web en React 18 + TypeScript + Vite + TailwindCSS que implementa un flujo de prerregistro de reembolso en formato de chat guiado por un asistente. La app está preparada para desplegarse en **AWS Amplify Hosting**.
 

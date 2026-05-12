@@ -1,5 +1,5 @@
 const SUBMIT_CLAIM_URL =
-  "https://ohyn5h6nsl4eviczorpqxucozm0grmjb.lambda-url.us-east-1.on.aws/";
+  "https://4a4gvz47qa7brr3h5zewdoafja0eyzbl.lambda-url.us-east-1.on.aws/";
 
 export interface SubmitClaimDocuments {
   [categoryKey: string]: {

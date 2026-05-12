@@ -1,4 +1,4 @@
-const CONVERSATION_KEY = "allianz_chat_conversation_id";
+const CONVERSATION_KEY = "example_chat_conversation_id";
 
 export const getOrCreateConversationId = (): string => {
   const existing = window.localStorage.getItem(CONVERSATION_KEY);

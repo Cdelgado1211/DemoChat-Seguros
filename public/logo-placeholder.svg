@@ -1,7 +1,7 @@
 <svg width="120" height="32" viewBox="0 0 120 32" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
-  <title id="title">Allianz Placeholder Logo</title>
-  <desc id="desc">Placeholder logo for Allianz reimbursement chat</desc>
+  <title id="title">Example Placeholder Logo</title>
+  <desc id="desc">Placeholder logo for Example reimbursement chat</desc>
   <rect width="120" height="32" rx="4" fill="#004481"/>
-  <text x="12" y="21" font-family="Arial, sans-serif" font-size="14" fill="#FFFFFF">Allianz</text>
+  <text x="12" y="21" font-family="Arial, sans-serif" font-size="14" fill="#FFFFFF">Example</text>
 </svg>
 

@@ -34,7 +34,7 @@ interface PresignResponse {
 // URL base de la Lambda de validación.
 // En este proyecto la fijamos directamente a la URL que nos proporcionaste.
 const apiBase =
-  "https://yozik7tmgnsy3qwusdkkrauafe0cofwq.lambda-url.us-east-1.on.aws";
+  "https://4a4gvz47qa7brr3h5zewdoafja0eyzbl.lambda-url.us-east-1.on.aws";
 
 const uploadMode = (import.meta.env.VITE_UPLOAD_MODE ?? "inlineBase64") as
   | "inlineBase64"
